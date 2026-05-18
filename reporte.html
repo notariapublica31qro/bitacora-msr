@@ -3165,24 +3165,19 @@ function updateMetaRing(){
 window.addEventListener('DOMContentLoaded', updateMetaRing);
 window.addEventListener('DOMContentLoaded', function(){ setTimeout(loadFromGitHub, 500); });
 
-// ── Exportar Excel ────────────────────────────────────────────
+// ── Exportar Excel (xlsx original con etiquetas) ──────────────────
 function exportBitacoraExcel(){
-  if(typeof XLSX === 'undefined'){ alert('La librería Excel aún no cargó, intenta de nuevo en un momento.'); return; }
-  const all=[...(DATA.pe||[]),...(DATA_CO||[])];
-  all.sort(function(a,b){
-    if(a.fe&&b.fe) return a.fe<b.fe?-1:a.fe>b.fe?1:0;
-    return 0;
-  });
-  const ab = typeof PRIMARY_AB!=='undefined'?PRIMARY_AB:'';
-  const headers=['Escritura','Expediente','Abogado','Operación','Municipio','Fecha Esc.','Estatus','Trámite','Acreedor','Lleva TD'];
-  const rows=[headers].concat(all.map(function(r){
-    return [r.e||'',r.xp||'',r.ab||'',r.op||'',r.mu||'',r.fe||'',r.es||'',r.tr||'',r.ac||'',r.td?'SI':'NO'];
-  }));
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:10},{wch:10},{wch:8},{wch:35},{wch:20},{wch:12},{wch:16},{wch:14},{wch:22},{wch:9}];
-  XLSX.utils.book_append_sheet(wb,ws,ab||'Bitácora');
-  XLSX.writeFile(wb,'Bitacora'+(ab?'_'+ab:'')+'.xlsx');
+  var b64=localStorage.getItem('ggr_xlsx_b64');
+  if(!b64){alert('No hay bitácora cargada. Regresa al inicio y sube el archivo primero.');return;}
+  try{
+    var bin=atob(b64);var bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    var blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob);var a=document.createElement('a');
+    var abN=typeof PRIMARY_AB!=='undefined'?PRIMARY_AB:'';
+    a.href=url;a.download='Bitacora'+(abN?'_'+abN:'')+'_etiquetada.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }catch(e){alert('Error al descargar: '+e.message);}
 }
 
 // ── Modo día / noche ──
