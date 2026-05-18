@@ -1630,8 +1630,8 @@ function showTokenModal() {
   setTimeout(function(){ var el=document.getElementById('gh-token-input'); if(el){el.focus();el.select();} }, 50);
 }
 const GH_OWNER = 'notariapublica31qro';
-const GH_REPO = 'bitacora-msr';
-const PRIMARY_AB = 'MSR';   // inyectado por build script
+let GH_REPO = 'bitacora-msr';
+let PRIMARY_AB = 'MSR';   // let para permitir reasignación desde localStorage
 let GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
 var _ghSha = {};
 var _ghSaveTimer = {};
