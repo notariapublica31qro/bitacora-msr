@@ -2968,6 +2968,13 @@ function updateAlCounts(){
   } catch(e) { console.warn('[lsLoad] Error cargando datos de localStorage:', e); }
 })();
 
+// Re-renderizar con los datos del localStorage (tabla de escrituras, KPIs y gráficas)
+renderPe();
+renderEx();
+updateKPIs(PRIMARY_AB);
+try { drawBar(); } catch(e) {}
+try { drawPie(null, PRIMARY_AB); } catch(e) {}
+
 updateAlCounts();
 updateAlVCounts();
 
