@@ -2964,6 +2964,24 @@ function updateAlCounts(){
       })();
       // Actualizar GH_API con el repo correcto
       GH_API = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
+      // Actualizar título e iniciales del abogado
+      if (_lspab) {
+        document.title = document.title.replace(/Bit\u00e1cora \w+/, 'Bit\u00e1cora ' + _lspab);
+        var _rfAbEl = document.getElementById('rf-ab-name');
+        if (_rfAbEl) _rfAbEl.textContent = _lspab;
+        var _hAbEl = document.getElementById('h-ab-name');
+        if (_hAbEl) _hAbEl.textContent = _lspab;
+      }
+      // Reconstruir alertaEscs con datos del localStorage (fix: mini-tarjetas y filtros)
+      alertaEscs.clear();
+      (DATA.al.td||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.rpp45||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.firmas||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.rpp90solo||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.bancos90||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.infonavit90||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      (DATA.al.fovissste90||[]).forEach(function(r){ alertaEscs.add(r.e); });
+      try { getNotifcatRows().forEach(function(r){ alertaEscs.add(r.e); }); } catch(e2) {}
     }
   } catch(e) { console.warn('[lsLoad] Error cargando datos de localStorage:', e); }
 })();
