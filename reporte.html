@@ -1413,7 +1413,7 @@ function drawLine() {
 let barHits = [];
 let barSelected = null;
 
-const BAR_STATS = (() => {
+let BAR_STATS = (() => {
   const abStats = {};
   const init = ab => { abStats[ab] = abStats[ab] || {falta_td:0,falta_cierre:0,falta_siger:0,falta_rpp:0,en_rpp:0,falta_finalizar:0,total:0}; };
   DATA.pe.forEach(r => {
@@ -1429,8 +1429,8 @@ const BAR_STATS = (() => {
   return abStats;
 })();
 
-const BAR_KEYS = Object.keys(BAR_STATS).filter(k=>BAR_STATS[k].total>0)
-                       .sort((a,b)=>BAR_STATS[b].total-BAR_STATS[a].total);
+let BAR_KEYS = Object.keys(BAR_STATS).filter(k=>BAR_STATS[k].total>0)
+                     .sort((a,b)=>BAR_STATS[b].total-BAR_STATS[a].total);
 
 function drawBar() {
   const cv = document.getElementById('cBar');
@@ -1632,7 +1632,7 @@ function showTokenModal() {
 const GH_OWNER = 'notariapublica31qro';
 let GH_REPO  = 'bitacora-ggr';
 let PRIMARY_AB = 'GGR';   // inyectado por build script
-const GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
+let GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
 var _ghSha = {};
 var _ghSaveTimer = {};
 
@@ -2942,6 +2942,28 @@ function updateAlCounts(){
       // Recomputar índices derivados con los nuevos datos
       DATA_FF_CO = DATA_CO.filter(function(r){ return r.es === 'FALTA FINALIZAR'; });
       DATA_FF_PE = DATA.pe.filter(function(r){ return r.es === 'FALTA FINALIZAR'; });
+      // Recomputar peMap con los nuevos datos
+      Object.keys(peMap).forEach(function(k){ delete peMap[k]; });
+      DATA.pe.forEach(function(r){ peMap[r.e]=r; });
+      (DATA_CO||[]).filter(function(r){ return r.es==='FALTA FINALIZAR'; }).forEach(function(r){ if(!peMap[r.e]) peMap[r.e]=r; });
+      // Recomputar BAR_STATS y BAR_KEYS con los nuevos datos
+      (function(){
+        var _bs = {};
+        var _bi = function(ab){ _bs[ab] = _bs[ab] || {falta_td:0,falta_cierre:0,falta_siger:0,falta_rpp:0,en_rpp:0,falta_finalizar:0,total:0}; };
+        DATA.pe.forEach(function(r){
+          _bi(r.ab); var s = _bs[r.ab];
+          if(r.es==='FALTA TD')          { s.falta_td++;     s.total++; }
+          else if(r.es==='FALTA CIERRE') { s.falta_cierre++; s.total++; }
+          else if(r.es==='FALTA SIGER')  { s.falta_siger++;  s.total++; }
+          else if(r.es==='FALTA RPP')    { s.falta_rpp++;    s.total++; }
+          else if(r.es==='EN RPP')       { s.en_rpp++;       s.total++; }
+        });
+        DATA_CO.forEach(function(r){ if(r.es!=='FALTA FINALIZAR') return; _bi(r.ab); _bs[r.ab].falta_finalizar++; _bs[r.ab].total++; });
+        BAR_STATS = _bs;
+        BAR_KEYS = Object.keys(BAR_STATS).filter(function(k){ return BAR_STATS[k].total>0; }).sort(function(a,b){ return BAR_STATS[b].total-BAR_STATS[a].total; });
+      })();
+      // Actualizar GH_API con el repo correcto
+      GH_API = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
     }
   } catch(e) { console.warn('[lsLoad] Error cargando datos de localStorage:', e); }
 })();
