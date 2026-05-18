@@ -485,6 +485,7 @@ async function handleFile(file){
     localStorage.setItem('ggr_periodo',res.periodo);
     localStorage.setItem('ggr_seg',JSON.stringify({se:res.segSe,T:res.T}));
     localStorage.setItem('ggr_primary_ab',res.primaryAb);
+    try{ localStorage.setItem('ggr_xlsx_b64', XLSX.write(_wb,{type:'base64',bookType:'xlsx'})); }catch(e){ console.warn('xlsx b64 localStorage:',e); }
     const s=res.stats;
     document.getElementById('s-total').textContent=s.total.toLocaleString();
     document.getElementById('s-pend').textContent=s.pendientes.toLocaleString();
