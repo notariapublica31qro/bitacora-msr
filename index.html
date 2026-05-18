@@ -452,7 +452,7 @@ async function handleFile(file){
     setProgress(60,'Detectando abogado y etiquetando…');await new Promise(r=>setTimeout(r,50));
     const res=processWorkbook(rows);
     // ── Si FORCED_AB detectado desde URL, filtrar datos a ese abogado ──────
-    if(FORCED_AB && FORCED_AB !== res.primaryAb){
+    if(FORCED_AB){
       const ab=FORCED_AB;
       res.primaryAb=ab; _primaryAb=ab;
       // Filtrar pendientes y concluidos al abogado del repo
