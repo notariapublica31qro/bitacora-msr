@@ -526,7 +526,7 @@ th.col-tr, td.col-tr{width:240px;text-align:center;font-size:.84rem;font-weight:
     <span class="h-title">Bitácora <span id="h-ab-name">GGR</span></span>
     <span class="h-periodo"><span class="lbl">Periodo:</span> Jun 2019 - May 2026</span>
     <span id="periodo-label" style="display:none">Mayo 2026</span>
-    <span style="display:flex;align-items:center;gap:6px;margin-top:4px;"><span id="gh-sync-status" style="font-size:.72rem;color:#94a3b8;letter-spacing:.02em;">&#8635; Conectando...</span><button onclick="showTokenModal()" title="Configurar token GitHub" style="background:none;border:none;cursor:pointer;color:#475569;font-size:.82rem;padding:0;line-height:1;">&#9881;</button></span>
+    <span style="display:flex;align-items:center;gap:6px;margin-top:4px;"><span id="gh-sync-status" style="font-size:.72rem;color:#94a3b8;letter-spacing:.02em;">&#8635; Conectando...</span><button onclick="showTokenModal()" title="Configurar token GitHub" style="background:none;border:none;cursor:pointer;color:#475569;font-size:.82rem;padding:0;line-height:1;">&#9881;</button><button onclick="exportBitacoraExcel()" title="Descargar bitácora en Excel" style="background:#16a34a;border:none;border-radius:6px;cursor:pointer;color:#fff;font-size:.72rem;padding:3px 10px;line-height:1.5;font-weight:700;display:inline-flex;align-items:center;gap:4px;">&#128196; Excel</button></span>
   </div>
   <div class="h-ring" id="meta-ring">
     <svg width="92" height="92" viewBox="0 0 92 92">
@@ -1630,8 +1630,8 @@ function showTokenModal() {
   setTimeout(function(){ var el=document.getElementById('gh-token-input'); if(el){el.focus();el.select();} }, 50);
 }
 const GH_OWNER = 'notariapublica31qro';
-let GH_REPO  = 'bitacora-ggr';
-let PRIMARY_AB = 'GGR';   // inyectado por build script
+const GH_REPO = 'bitacora-msr';
+const PRIMARY_AB = 'MSR';   // inyectado por build script
 let GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/';
 var _ghSha = {};
 var _ghSaveTimer = {};
@@ -3165,6 +3165,26 @@ function updateMetaRing(){
 window.addEventListener('DOMContentLoaded', updateMetaRing);
 window.addEventListener('DOMContentLoaded', function(){ setTimeout(loadFromGitHub, 500); });
 
+// ── Exportar Excel ────────────────────────────────────────────
+function exportBitacoraExcel(){
+  if(typeof XLSX === 'undefined'){ alert('La librería Excel aún no cargó, intenta de nuevo en un momento.'); return; }
+  const all=[...(DATA.pe||[]),...(DATA_CO||[])];
+  all.sort(function(a,b){
+    if(a.fe&&b.fe) return a.fe<b.fe?-1:a.fe>b.fe?1:0;
+    return 0;
+  });
+  const ab = typeof PRIMARY_AB!=='undefined'?PRIMARY_AB:'';
+  const headers=['Escritura','Expediente','Abogado','Operación','Municipio','Fecha Esc.','Estatus','Trámite','Acreedor','Lleva TD'];
+  const rows=[headers].concat(all.map(function(r){
+    return [r.e||'',r.xp||'',r.ab||'',r.op||'',r.mu||'',r.fe||'',r.es||'',r.tr||'',r.ac||'',r.td?'SI':'NO'];
+  }));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:10},{wch:8},{wch:35},{wch:20},{wch:12},{wch:16},{wch:14},{wch:22},{wch:9}];
+  XLSX.utils.book_append_sheet(wb,ws,ab||'Bitácora');
+  XLSX.writeFile(wb,'Bitacora'+(ab?'_'+ab:'')+'.xlsx');
+}
+
 // ── Modo día / noche ──
 function toggleLightMode(){
   document.body.classList.toggle('light');
@@ -3184,4 +3204,5 @@ function toggleLightMode(){
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
