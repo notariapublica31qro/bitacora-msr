@@ -2975,6 +2975,14 @@ function updateAlCounts(){
       if (_rfAbEl) _rfAbEl.textContent = PRIMARY_AB;
       var _hAbEl = document.getElementById('h-ab-name');
       if (_hAbEl) _hAbEl.textContent = PRIMARY_AB;
+      // Actualizar período en el banner desde localStorage
+      var _lspd = localStorage.getItem('ggr_periodo');
+      if (_lspd) {
+        var _hPdEl = document.querySelector('.h-periodo');
+        if (_hPdEl) _hPdEl.innerHTML = '<span class="lbl">Periodo:</span> ' + _lspd;
+        var _lsRef = localStorage.getItem('ggr_ref_str');
+        if (_lsRef) document.title = document.title.replace(/a d{2}-d{2}-d{4}$/, 'a ' + _lsRef);
+      }
       // Reconstruir alertaEscs con datos del localStorage (fix: mini-tarjetas y filtros)
       alertaEscs.clear();
       (DATA.al.td||[]).forEach(function(r){ alertaEscs.add(r.e); });
