@@ -2989,6 +2989,7 @@ function updateAlCounts(){
 // Re-renderizar con los datos del localStorage (tabla de escrituras, KPIs y gráficas)
 renderPe();
 renderEx();
+try { renderAl(); } catch(e) {}
 updateKPIs(PRIMARY_AB);
 try { drawBar(); } catch(e) {}
 try { drawPie(null, PRIMARY_AB); } catch(e) {}
