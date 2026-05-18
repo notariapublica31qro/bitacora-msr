@@ -122,11 +122,13 @@ const AB_REPOS = {ATM:'bitacora-atm',EAC:'bitacora-eac',GMB:'bitacora-gmb',JCL:'
 const GH_BASE = 'https://notariapublica31qro.github.io/';
 
 // ── Detectar abogado desde URL del repo (GitHub Pages) ───────────────────
+let FORCED_AB = null;
 (function(){
   var m = window.location.pathname.match(/\/bitacora-([a-z]+)\//i);
   if(m){
     var ab = m[1].toUpperCase();
     if(VALID_AB.has(ab)){
+      FORCED_AB = ab;
       var el = document.getElementById('titulo-ab');
       if(el) el.textContent = 'Bitácora '+ab;
     }
@@ -449,6 +451,22 @@ async function handleFile(file){
     const rows=await parseXlsxRows(buf);
     setProgress(60,'Detectando abogado y etiquetando…');await new Promise(r=>setTimeout(r,50));
     const res=processWorkbook(rows);
+    // ── Si FORCED_AB detectado desde URL, filtrar datos a ese abogado ──────
+    if(FORCED_AB && FORCED_AB !== res.primaryAb){
+      const ab=FORCED_AB;
+      res.primaryAb=ab; _primaryAb=ab;
+      const peF=res.DATA.pe.filter(r=>r.ab===ab);
+      const coF=res.DATA_CO.filter(r=>r.ab===ab);
+      res.DATA.pe=peF; res.DATA_CO=coF;
+      const allF=[...peF,...coF];
+      const totalF=allF.length,trasF=allF.filter(r=>r.td).length,conclF=coF.length;
+      res.DATA.t={total:totalF,traslativas:trasF,no_traslativas:totalF-trasF,concluido:conclF,pendientes:totalF-conclF,pct_concluido:totalF?Math.round(conclF/totalF*1000)/10:0};
+      const esF={};allF.forEach(r=>{if(r.es)esF[r.es]=(esF[r.es]||0)+1;});
+      res.DATA.es=esF;
+      ['td','rpp45','firmas','rpp90','pe','bancos','infonavit','fovissste','td_pv','rpp90solo','bancos90','infonavit90','fovissste90'].forEach(k=>{if(res.DATA.al[k])res.DATA.al[k]=res.DATA.al[k].filter(r=>r.ab===ab);});
+      var elT=document.getElementById('titulo-ab');if(elT)elT.textContent='Bitácora '+ab;
+      var elL=document.getElementById('s-ab-label');if(elL)elL.textContent=ab;
+    }
     setProgress(85,'Guardando datos del reporte…');await new Promise(r=>setTimeout(r,50));
     localStorage.setItem('ggr_data',JSON.stringify(res.DATA));
     localStorage.setItem('ggr_data_me',JSON.stringify(res.DATA_ME));
