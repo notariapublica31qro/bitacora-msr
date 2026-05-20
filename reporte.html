@@ -3279,7 +3279,7 @@ function toggleLightMode(){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-/* FF-supplement v1: agrega FALTA FINALIZAR a alertas bancos/infonavit/fovissste */
+/* FF-supplement v2: FALTA FINALIZAR (keywords) + CONCLUIDO (flags) en bancos/infonavit/fovissste */
 (function(){var _s=function(){try{
   var t=new Date(),dn=function(f){return f?Math.floor((t-new Date(f))/86400000):0};
   var isBk=function(a){return/BBVA|SANTANDER|HSBC|SCOTIABANK|BANAMEX|CITIBANAM|INBURSA|AZTECA|BAJIO|BIENESTAR|BANCOMER|BANJERCITO|BANCO/i.test(a||'')};
@@ -3289,13 +3289,18 @@ function toggleLightMode(){
   var ei=new Set((DATA.al.infonavit90||[]).map(function(r){return r.e}));
   var ef=new Set((DATA.al.fovissste90||[]).map(function(r){return r.e}));
   (DATA_CO||[]).forEach(function(r){
-    if(r.es!=='FALTA FINALIZAR'||r.rpp)return;
     var d=dn(r.fe);if(d<=150)return;
     var item={e:r.e,ab:r.ab,op:r.op,mu:r.mu,fe:r.fe,d:d,v:true,xp:r.xp||'',ac:r.ac||'',li:150};
     var ac=r.ac||'';
-    if(isBk(ac)&&!eb.has(r.e)){DATA.al.bancos90.push(item);eb.add(r.e);}
-    if(isIn(ac)&&!ei.has(r.e)){DATA.al.infonavit90.push(item);ei.add(r.e);}
-    if(isFv(ac)&&!ef.has(r.e)){DATA.al.fovissste90.push(item);ef.add(r.e);}
+    if(r.es==='FALTA FINALIZAR'){
+      if(isBk(ac)&&!eb.has(r.e)){DATA.al.bancos90.push(item);eb.add(r.e);}
+      if(isIn(ac)&&!ei.has(r.e)){DATA.al.infonavit90.push(item);ei.add(r.e);}
+      if(isFv(ac)&&!ef.has(r.e)){DATA.al.fovissste90.push(item);ef.add(r.e);}
+    } else if(r.es==='CONCLUIDO'){
+      if(r.ba&&!eb.has(r.e)){DATA.al.bancos90.push(item);eb.add(r.e);}
+      if(r.infonavit&&!ei.has(r.e)){DATA.al.infonavit90.push(item);ei.add(r.e);}
+      if(r.fovissste&&!ef.has(r.e)){DATA.al.fovissste90.push(item);ef.add(r.e);}
+    }
   });
   if(typeof switchTab==='function')try{switchTab(curTab);}catch(e){}
   if(typeof updateAlVCounts==='function')try{updateAlVCounts();}catch(e){}
