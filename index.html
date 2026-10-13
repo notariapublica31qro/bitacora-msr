@@ -3672,14 +3672,30 @@ function processWorkbook(rows){
 
   // Reconstruir workbook modificado
   const newWb=XLSX.utils.book_new();
-  // Fechas: de texto 'YYYY-MM-DD' (normalizado al leer) a serial de Excel con formato dd/mm/yyyy (sin desfase de zona horaria)
+  // Tipos por columna en el xlsx etiquetado:
+  //  - Expediente / Escritura → número (0.00 / 0)
+  //  - Fech. Exp., Fech. Esc., Fech. Esc. Ven. y columnas 19+ → fecha real (serial Excel, dd/mm/yyyy), aunque vengan como texto
+  //  - cualquier otra celda con texto 'YYYY-MM-DD' (normalizado al leer) → fecha
   const RE_ISO=/^(\d{4})-(\d{2})-(\d{2})$/;
+  const hdr0=modRows[0]||[];
+  const isDateCol=hdr0.map((h,i)=>i>=18||/^Fech/i.test(String(h||'').trim()));
+  const numCol={};hdr0.forEach((h,i)=>{const t=String(h||'').trim();if(t==='Expediente')numCol[i]='0.00';if(t==='Escritura')numCol[i]='0';});
+  const toSerial=d=>Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(1899,11,30))/86400000);
   const newWs=XLSX.utils.aoa_to_sheet(modRows);
   const rng=XLSX.utils.decode_range(newWs['!ref']||'A1');
   for(let R=rng.s.r+1;R<=rng.e.r;R++)for(let C=rng.s.c;C<=rng.e.c;C++){
     const c=newWs[XLSX.utils.encode_cell({r:R,c:C})];
-    if(c&&c.t==='s'&&typeof c.v==='string'){const m=c.v.match(RE_ISO);
-      if(m){c.t='n';c.v=Math.round((Date.UTC(+m[1],+m[2]-1,+m[3])-Date.UTC(1899,11,30))/86400000);c.z='dd/mm/yyyy';delete c.w;}}
+    if(!c)continue;
+    if(numCol[C]!==undefined){
+      if(c.t==='s'&&/^\s*-?[0-9]+(\.[0-9]+)?\s*$/.test(String(c.v))){c.t='n';c.v=parseFloat(c.v);}
+      if(c.t==='n'){c.z=numCol[C];delete c.w;}
+      continue;
+    }
+    let d=null;
+    if(c.t==='s'&&typeof c.v==='string'){const m=c.v.match(RE_ISO);if(m)d=new Date(+m[1],+m[2]-1,+m[3]);else if(isDateCol[C])d=parseStrDate(c.v);}
+    else if(c.t==='d'&&c.v instanceof Date)d=c.v;
+    else if(c.t==='n'&&isDateCol[C]&&c.v>25569&&c.v<60000){c.z='dd/mm/yyyy';delete c.w;continue;}
+    if(d&&!isNaN(d.getTime())){c.t='n';c.v=toSerial(d);c.z='dd/mm/yyyy';delete c.w;}
   }
   newWs['!cols']=(modRows[0]||[]).map(h=>({wch:Math.min(40,Math.max(10,String(h||'').length+2))}));
   XLSX.utils.book_append_sheet(newWb,newWs,'Bitácora');
