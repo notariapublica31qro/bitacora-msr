@@ -3705,7 +3705,9 @@ async function n31HandleXlsx(file) {
     localStorage.setItem('n31_ref_str',    res.refStr);
     localStorage.setItem('n31_periodo',    res.periodo);
     _lzSet('n31_seg',        {se:res.segSe,T:res.T});
-    try{ if(_wb) localStorage.setItem('n31_xlsx_b64', XLSX.write(_wb,{type:'base64',bookType:'xlsx'})); }catch(e){ console.warn('xlsx_b64 no guardado (quota):',e); try{localStorage.removeItem('n31_xlsx_b64');}catch(e2){} }
+    if(_wb){ var _b64=XLSX.write(_wb,{type:'base64',bookType:'xlsx'});
+      try{ await n31SaveXlsxIDB(_b64); }catch(e){ console.warn('IDB:',e); }
+      try{ localStorage.setItem('n31_xlsx_b64',_b64); }catch(e){ try{localStorage.removeItem('n31_xlsx_b64');}catch(e2){} } }
     // Actualizar calendario inmediatamente antes del reload
     var cm=document.getElementById('cal-mes'),cd=document.getElementById('cal-dia'),ca=document.getElementById('cal-anio');
     if(cm)cm.textContent=res.refMes; if(cd)cd.textContent=res.refDia; if(ca)ca.textContent=res.refAnio;
@@ -3715,6 +3717,44 @@ async function n31HandleXlsx(file) {
     alert('Error al procesar xlsx:\n' + err.message);
     console.error(err);
   }
+}
+
+// ── xlsx etiquetado en IndexedDB (sin límite de 5MB del localStorage) ──
+function n31IdbKey(){return 'wb_b64_'+((typeof PRIMARY_AB!=='undefined'&&PRIMARY_AB)||'AB');}
+function n31SaveXlsxIDB(b64){
+  return new Promise(function(resolve,reject){
+    var req=indexedDB.open('n31_idb',1);
+    req.onupgradeneeded=function(e){e.target.result.createObjectStore('xlsx');};
+    req.onsuccess=function(e){var db=e.target.result;var tx=db.transaction('xlsx','readwrite');tx.objectStore('xlsx').put(b64,n31IdbKey());tx.oncomplete=resolve;tx.onerror=reject;};
+    req.onerror=reject;
+  });
+}
+function n31LoadXlsxIDB(){
+  return new Promise(function(resolve){
+    try{
+      var req=indexedDB.open('n31_idb',1);
+      req.onupgradeneeded=function(e){e.target.result.createObjectStore('xlsx');};
+      req.onsuccess=function(e){try{var tx=e.target.result.transaction('xlsx','readonly');var g=tx.objectStore('xlsx').get(n31IdbKey());g.onsuccess=function(){resolve(g.result||null);};g.onerror=function(){resolve(null);};}catch(err){resolve(null);}};
+      req.onerror=function(){resolve(null);};
+    }catch(err){resolve(null);}
+  });
+}
+// Botón 📋 Excel: descarga el xlsx etiquetado de la última carga (IDB, con respaldo en localStorage)
+async function exportBitacoraExcel(){
+  var b64=null;
+  try{ b64=await n31LoadXlsxIDB(); }catch(e){}
+  if(!b64){ try{ b64=localStorage.getItem('n31_xlsx_b64'); }catch(e){} }
+  if(!b64){ alert('No hay bitácora cargada. Haz clic en el calendario del banner y sube el archivo .xlsx primero.'); return; }
+  try{
+    var bin=atob(b64),bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    var blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    var ab=(typeof PRIMARY_AB!=='undefined'&&PRIMARY_AB)||'';
+    var ref=(localStorage.getItem('n31_ref_str')||'').replace(/[^0-9-]/g,'');
+    a.href=url;a.download='Bitacora'+(ab?'_'+ab:'')+'_etiquetada'+(ref?'_'+ref:'')+'.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }catch(e){ alert('Error al descargar: '+e.message); }
 }
 
 // ── Conectar event listener desde closure (evita problemas de scope global) ──
