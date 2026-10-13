@@ -3090,23 +3090,24 @@ function syncAlVBtnSizes(){
     ['al-v-btn-pv',  document.querySelector('.tab[data-t="firmas"]')],
     ['al-v-btn-ve',  document.querySelector('.tab[data-t="td"]')],
   ];
-  // (1) resetear, (2) reflow, (3) medir tab, (4) aplicar exacto al botón
+  // (1) resetear ambos, (2) reflow, (3) medir anchos naturales, (4) aplicar el MAYOR a los dos
+  // → siguen alineados en columna pero el botón nunca queda más angosto que su texto + contador
   pairs.forEach(function([btnId, tabEl]){
-    if(!tabEl) return;
     var btn = document.getElementById(btnId);
-    if(!btn) return;
-    btn.style.width = '';
-    btn.style.height = '';
+    if(btn){ btn.style.width=''; btn.style.height=''; btn.style.minWidth=''; }
+    if(tabEl){ tabEl.style.width=''; tabEl.style.minWidth=''; }
   });
   void document.body.offsetWidth;
   pairs.forEach(function([btnId, tabEl]){
     if(!tabEl) return;
     var btn = document.getElementById(btnId);
     if(!btn) return;
-    var r = tabEl.getBoundingClientRect();
-    btn.style.boxSizing = 'border-box';
-    btn.style.width  = r.width  + 'px';
-    btn.style.height = r.height + 'px';
+    var rt = tabEl.getBoundingClientRect(), rb = btn.getBoundingClientRect();
+    var w = Math.ceil(Math.max(rt.width, rb.width));
+    btn.style.boxSizing = 'border-box'; tabEl.style.boxSizing = 'border-box';
+    btn.style.width  = w + 'px';
+    tabEl.style.width = w + 'px';
+    btn.style.height = rt.height + 'px';
   });
 }
 // Correr en load y luego observar cambios de tamaño en los 3 tabs de referencia
