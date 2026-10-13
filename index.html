@@ -796,7 +796,9 @@ function abPill(ab){
   return `<span style="display:inline-block;padding:2px 7px;border-radius:7px;font-size:.68rem;font-weight:700;background:${c}22;color:${c};border:1px solid ${c}44">${ab}</span>`;
 }
 
-const REF_DATE = new Date('2026-05-02');
+let REF_DATE = new Date('2026-05-02');
+// Fecha de corte desde la última bitácora cargada (dd-mm-yyyy en localStorage)
+(function(){try{var s=localStorage.getItem('n31_ref_str');var m=s&&s.match(/^(\d{2})-(\d{2})-(\d{4})$/);if(m)REF_DATE=new Date(+m[3],+m[2]-1,+m[1]);}catch(e){}})();
 const NOTIFCAT_LIM = 25;
 const peMap = {};
 DATA.pe.forEach(r=>peMap[r.e]=r);
@@ -3181,9 +3183,8 @@ function getMostRecentMonth(){
   if(typeof REF_DATE !== 'undefined'){
     const yRef = String(REF_DATE.getFullYear());
     const mRef = REF_DATE.getMonth();
-    if(DATA_ME[yRef] && DATA_ME[yRef][mRef] > 0){
-      return { year: yRef, mIdx: mRef };
-    }
+    // Meta del mes: siempre el mes de la fecha de corte, aunque aún no tenga escrituras (0%)
+    return { year: yRef, mIdx: mRef };
   }
   // Fallback: último mes con > 0 escrituras
   const years = Object.keys(DATA_ME).sort().reverse();
@@ -3228,7 +3229,7 @@ function updateMetaRing(){
   if(ab && typeof DATA_AB_ME !== 'undefined' && DATA_AB_ME[ab] && DATA_AB_ME[ab][year]){
     num = DATA_AB_ME[ab][year][mIdx] || 0;
   } else {
-    num = DATA_ME[year][mIdx] || 0;
+    num = (DATA_ME[year]||[])[mIdx] || 0;
   }
   if(fg && pctEl){
     const pct = metaObj.total > 0 ? Math.min(100, Math.round((num / metaObj.total) * 100)) : 0;
